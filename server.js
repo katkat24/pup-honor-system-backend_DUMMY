@@ -38,27 +38,7 @@ app.get("/students", async (req, res) => {
   try {
     conn = await pool.getConnection();
     const rows = await conn.query(`
-  SELECT
-    studentID,
-    CONCAT(surname, ', ', givenname) AS name,
-    program,
-    college,
-    gwa,
-    semester,
-    academicYear,
-    yearlevel AS yearLevel,
-    failedSubjects,
-    incSubjects AS incompleteSubjects,
-    dropSubjects AS droppedSubjects,
-    withdrawnSubjects,
-    unitsEnrolled,
-    requiredUnits,
-    lowest_grade AS lowestGrade,
-    entry_type AS entryType,
-    student_status AS studentStatus,
-    cumulative_gwa AS cumulativeGwa
-  FROM student
-`);
+  const rows = await conn.query("SELECT * FROM student");
     res.json(rows);
   } catch (err) {
     console.log("STUDENTS ERROR:", err);
