@@ -38,7 +38,29 @@ app.get("/students", async (req, res) => {
   try {
     conn = await pool.getConnection();
 
-    const rows = await conn.query("SELECT * FROM students");
+    const rows = await conn.query(`
+      SELECT
+        studentID,
+        surname,
+        givenname AS givenName,
+        program,
+        college,
+        gwa,
+        semester,
+        academicYear,
+        yearlevel AS yearLevel,
+        failedSubjects,
+        incSubjects AS incompleteSubjects,
+        dropSubjects AS droppedSubjects,
+        withdrawnSubjects,
+        unitsEnrolled,
+        requiredUnits,
+        lowestGrade,
+        entryType,
+        studentStatus,
+        cumulativeGwa
+      FROM students
+    `);
 
     res.json(rows);
   } catch (err) {
