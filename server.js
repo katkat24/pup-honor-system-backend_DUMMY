@@ -37,8 +37,9 @@ app.get("/students", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    const rows = await conn.query(`
-  const rows = await conn.query("SELECT * FROM students");
+
+    const rows = await conn.query("SELECT * FROM students");
+
     res.json(rows);
   } catch (err) {
     console.log("STUDENTS ERROR:", err);
@@ -47,7 +48,6 @@ app.get("/students", async (req, res) => {
     if (conn) conn.release();
   }
 });
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
