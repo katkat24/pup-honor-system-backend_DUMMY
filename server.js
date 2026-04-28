@@ -38,7 +38,7 @@ app.get("/students", async (req, res) => {
   try {
     conn = await pool.getConnection();
     const rows = await conn.query(`
-  const rows = await conn.query("SELECT * FROM student");
+  const rows = await conn.query("SELECT * FROM students");
     res.json(rows);
   } catch (err) {
     console.log("STUDENTS ERROR:", err);
