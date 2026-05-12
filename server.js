@@ -39,27 +39,7 @@ app.get("/students", async (req, res) => {
     conn = await pool.getConnection();
 
    const rows = await conn.query(`
-  	SELECT
-    studentID,
-    surname,
-    givenname AS givenName,
-    program,
-    college,
-    gwa,
-    semester,
-    academicYear,
-    yearlevel AS yearLevel,
-    failedSubjects,
-    incSubjects AS incompleteSubjects,
-    dropSubjects AS droppedSubjects,
-    withdrawnSubjects,
-    unitsEnrolled,
-    requiredUnits,
-    lowest_grade AS lowestGrade,
-    entry_type AS entryType,
-    student_status AS studentStatus,
-    cumulative_gwa AS cumulativeGwa
-    FROM tbl_students
+  	SELECT * FROM tbl_students
     `);
 
     res.json(rows);
