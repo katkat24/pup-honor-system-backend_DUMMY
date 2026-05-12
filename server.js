@@ -60,7 +60,7 @@ app.get("/students", async (req, res) => {
     entry_type AS entryType,
     student_status AS studentStatus,
     cumulative_gwa AS cumulativeGwa
-    FROM students
+    FROM tbl_students
     `);
 
     res.json(rows);
