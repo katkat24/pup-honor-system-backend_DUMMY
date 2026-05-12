@@ -40,7 +40,6 @@ app.get("/students", async (req, res) => {
 
    const rows = await conn.query(`
   	SELECT
-    id,
     studentID,
     surname,
     givenname AS givenName,
