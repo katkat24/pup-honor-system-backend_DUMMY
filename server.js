@@ -32,7 +32,7 @@ app.get("/", async (req, res) => {
     if (conn) conn.release();
   }
 });
-
+/// STUDENTS
 app.get("/students", async (req, res) => {
   let conn;
   try {
@@ -45,6 +45,133 @@ app.get("/students", async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.log("STUDENTS ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+// PROGRAMS
+app.get("/programs", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_programs");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// SUBJECTS
+app.get("/subjects", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_subjects");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// CURRICULUM
+app.get("/curriculum", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_curriculum");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// GRADES
+app.get("/grades", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_grades");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// HONOR CRITERIA
+app.get("/honor-criteria", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_honor_criteria");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// AWARDS
+app.get("/awards", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_awards");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// USERS
+app.get("/users", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_users");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// ADMINS
+app.get("/admins", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_admins");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
