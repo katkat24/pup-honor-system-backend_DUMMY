@@ -191,6 +191,26 @@ app.get("/activity-log", async (req, res) => {
     if (conn) conn.release();
   }
 });
+app.get("/password-reset-tokens", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+
+    const rows = await conn.query(
+      "SELECT * FROM tbl_password_reset_token"
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+
+  } finally {
+    if (conn) conn.release();
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
