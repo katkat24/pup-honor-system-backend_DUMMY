@@ -299,10 +299,10 @@ app.put("/users/:userId", async (req, res) => {
     if (conn) conn.release();
   }
 });
-// Endpoint for QR Verification: /verify?id=CERT-12345
-app.get("/verify", async (req, res) => {
+// Endpoint for QR Verification: /verify/CERT-12345
+app.get("/verify/:id", async (req, res) => {
   let conn;
-  const certificateId = req.query.id;
+  const certificateId = req.params.id;
 
   if (!certificateId) {
     return res.status(400).json({
