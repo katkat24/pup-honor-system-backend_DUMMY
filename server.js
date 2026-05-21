@@ -299,7 +299,7 @@ app.put("/users/:userId", async (req, res) => {
     if (conn) conn.release();
   }
 });
-// QR Certificate Verification
+// Endpoint for QR Verification: /verify?id=CERT-12345
 app.get("/verify", async (req, res) => {
   let conn;
   const certificateId = req.query.id;
@@ -337,10 +337,9 @@ app.get("/verify", async (req, res) => {
       status: "INVALID_CERTIFICATE",
       message: "This certificate record could not be found in the SHMS Portal registry."
     });
-
-  } catch (err) {
-    console.log("VERIFY ERROR:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (error) {
+    console.log("VERIFY ERROR:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     if (conn) conn.release();
   }
