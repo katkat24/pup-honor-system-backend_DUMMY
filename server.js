@@ -420,6 +420,50 @@ app.get("/certificates", async (req, res) => {
     if (conn) conn.release();
   }
 });
+// UPDATE award
+app.put("/awards/:awardId", async (req, res) => {
+  let conn;
+  const { student_id, award_type, academic_year, semester } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `UPDATE tbl_awards
+       SET student_id = ?, award_type = ?, academic_year = ?, semester = ?
+       WHERE award_id = ?`,
+      [student_id, award_type, academic_year, semester, req.params.awardId]
+    );
+
+    res.json({ message: "Award updated successfully" });
+  } catch (err) {
+    console.log("UPDATE AWARD ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// DELETE award
+app.delete("/awards/:awardId", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      "DELETE FROM tbl_awards WHERE award_id = ?",
+      [req.params.awardId]
+    );
+
+    res.json({ message: "Award deleted successfully" });
+  } catch (err) {
+    console.log("DELETE AWARD ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
