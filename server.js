@@ -529,6 +529,211 @@ app.delete("/awards/:awardId", async (req, res) => {
     if (conn) conn.release();
   }
 });
+// UPDATE student
+app.put("/students/:studentId", async (req, res) => {
+  let conn;
+  const data = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      "UPDATE tbl_students SET ? WHERE student_id = ?",
+      [data, req.params.studentId]
+    );
+
+    res.json({ message: "Student updated successfully" });
+  } catch (err) {
+    console.log("UPDATE STUDENT ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// DELETE student
+app.delete("/students/:studentId", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      "DELETE FROM tbl_students WHERE student_id = ?",
+      [req.params.studentId]
+    );
+
+    res.json({ message: "Student deleted successfully" });
+  } catch (err) {
+    console.log("DELETE STUDENT ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// GRADES
+app.put("/grades/:gradeId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_grades SET ? WHERE grade_id = ?", [req.body, req.params.gradeId]);
+    res.json({ message: "Grade updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/grades/:gradeId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_grades WHERE grade_id = ?", [req.params.gradeId]);
+    res.json({ message: "Grade deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// ADMINS
+app.put("/admins/:employeeId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_admins SET ? WHERE employee_id = ?", [req.body, req.params.employeeId]);
+    res.json({ message: "Admin updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/admins/:employeeId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_admins WHERE employee_id = ?", [req.params.employeeId]);
+    res.json({ message: "Admin deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// USERS
+app.put("/users/:userId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_users SET ? WHERE user_id = ?", [req.body, req.params.userId]);
+    res.json({ message: "User updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/users/:userId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_users WHERE user_id = ?", [req.params.userId]);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// CURRICULUM
+app.put("/curriculum/:curriculumId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_curriculum SET ? WHERE curriculum_id = ?", [req.body, req.params.curriculumId]);
+    res.json({ message: "Curriculum updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/curriculum/:curriculumId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_curriculum WHERE curriculum_id = ?", [req.params.curriculumId]);
+    res.json({ message: "Curriculum deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// SUBJECTS
+app.put("/subjects/:subjectId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_subjects SET ? WHERE subject_id = ?", [req.body, req.params.subjectId]);
+    res.json({ message: "Subject updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/subjects/:subjectId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_subjects WHERE subject_id = ?", [req.params.subjectId]);
+    res.json({ message: "Subject deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// PROGRAMS
+app.put("/programs/:programId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("UPDATE tbl_programs SET ? WHERE program_id = ?", [req.body, req.params.programId]);
+    res.json({ message: "Program updated successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/programs/:programId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query("DELETE FROM tbl_programs WHERE program_id = ?", [req.params.programId]);
+    res.json({ message: "Program deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
