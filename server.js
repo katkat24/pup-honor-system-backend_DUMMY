@@ -305,10 +305,10 @@ app.get("/verify/:id", async (req, res) => {
   const certificateId = req.params.id;
 
   if (!certificateId) {
-    return res.status(400).json({
-      status: "MISSING_CERTIFICATE_ID",
-      message: "Please provide a certificate ID."
-    });
+    return res.status(400).send(`
+      <h1>Missing Certificate ID</h1>
+      <p>Please provide a certificate ID.</p>
+    `);
   }
 
   try {
@@ -320,222 +320,89 @@ app.get("/verify/:id", async (req, res) => {
     );
 
     if (rows.length > 0) {
-      return res.status(200).json({
-        status: "VERIFIED",
-        system_name: "PUP Student Honor Management System",
-        verification_date: new Date().toISOString().split("T")[0],
-        certificate_details: {
-          certificate_number: certificateId,
-          student_name: rows[0].student_name,
-          award: rows[0].list_type,
-          academic_year: rows[0].academic_year
-        }
-      });
+      const cert = rows[0];
+
+      return res.status(200).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Certificate Verification</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #f4f6f8;
+              padding: 30px;
+              text-align: center;
+            }
+            .card {
+              background: white;
+              max-width: 500px;
+              margin: auto;
+              padding: 25px;
+              border-radius: 12px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            }
+            .verified {
+              color: #15803d;
+              font-size: 28px;
+              font-weight: bold;
+            }
+            .label {
+              color: #555;
+              margin-top: 15px;
+              font-size: 14px;
+            }
+            .value {
+              font-size: 18px;
+              font-weight: bold;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="verified">VERIFIED ✅</div>
+            <h2>PUP Student Honor Management System</h2>
+
+            <div class="label">Certificate Number</div>
+            <div class="value">${certificateId}</div>
+
+            <div class="label">Student Name</div>
+            <div class="value">${cert.student_name}</div>
+
+            <div class="label">Award</div>
+            <div class="value">${cert.list_type}</div>
+
+            <div class="label">Academic Year</div>
+            <div class="value">${cert.academic_year}</div>
+
+            <div class="label">Verification Date</div>
+            <div class="value">${new Date().toISOString().split("T")[0]}</div>
+          </div>
+        </body>
+        </html>
+      `);
     }
 
-    return res.status(404).json({
-      status: "INVALID_CERTIFICATE",
-      message: "This certificate record could not be found in the SHMS Portal registry."
-    });
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Invalid Certificate</title>
+      </head>
+      <body style="font-family: Arial; text-align: center; padding: 40px; background: #fff1f2;">
+        <div style="background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 12px;">
+          <h1 style="color: #dc2626;">INVALID ❌</h1>
+          <p>This certificate record could not be found in the SHMS Portal registry.</p>
+          <p><b>Certificate ID:</b> ${certificateId}</p>
+        </div>
+      </body>
+      </html>
+    `);
   } catch (error) {
     console.log("VERIFY ERROR:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    if (conn) conn.release();
-  }
-});
-// ADD award
-app.post("/awards", async (req, res) => {
-  let conn;
-  const { student_id, award_type, academic_year, semester } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      `INSERT INTO tbl_awards 
-       (student_id, award_type, academic_year, semester)
-       VALUES (?, ?, ?, ?)`,
-      [student_id, award_type, academic_year, semester]
-    );
-
-    res.status(201).json({ message: "Award added successfully" });
-  } catch (err) {
-    console.log("ADD AWARD ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// UPDATE award
-app.put("/awards/:awardId", async (req, res) => {
-  let conn;
-  const { award_type, academic_year, semester } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      `UPDATE tbl_awards 
-       SET award_type = ?, academic_year = ?, semester = ?
-       WHERE award_id = ?`,
-      [award_type, academic_year, semester, req.params.awardId]
-    );
-
-    res.json({ message: "Award updated successfully" });
-  } catch (err) {
-    console.log("UPDATE AWARD ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// DELETE award
-app.delete("/awards/:awardId", async (req, res) => {
-  let conn;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      "DELETE FROM tbl_awards WHERE award_id = ?",
-      [req.params.awardId]
-    );
-
-    res.json({ message: "Award deleted successfully" });
-  } catch (err) {
-    console.log("DELETE AWARD ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-// GET all certificates
-app.get("/certificates", async (req, res) => {
-  let conn;
-
-  try {
-    conn = await pool.getConnection();
-
-    const rows = await conn.query(
-      "SELECT * FROM tbl_certificates"
-    );
-
-    res.json(rows);
-  } catch (err) {
-    console.log("GET CERTIFICATES ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// ADD certificate
-app.post("/certificates", async (req, res) => {
-  let conn;
-
-  const {
-    certificate_id,
-    student_id,
-    student_name,
-    list_type,
-    academic_year,
-    semester
-  } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      `INSERT INTO tbl_certificates
-      (certificate_id, student_id, student_name, list_type, academic_year, semester)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        certificate_id,
-        student_id,
-        student_name,
-        list_type,
-        academic_year,
-        semester
-      ]
-    );
-
-    res.status(201).json({
-      message: "Certificate added successfully"
-    });
-
-  } catch (err) {
-    console.log("ADD CERTIFICATE ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// UPDATE certificate
-app.put("/certificates/:certificateId", async (req, res) => {
-  let conn;
-
-  const {
-    student_name,
-    list_type,
-    academic_year,
-    semester
-  } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      `UPDATE tbl_certificates
-       SET
-         student_name = ?,
-         list_type = ?,
-         academic_year = ?,
-         semester = ?
-       WHERE certificate_id = ?`,
-      [
-        student_name,
-        list_type,
-        academic_year,
-        semester,
-        req.params.certificateId
-      ]
-    );
-
-    res.json({
-      message: "Certificate updated successfully"
-    });
-
-  } catch (err) {
-    console.log("UPDATE CERTIFICATE ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-
-// DELETE certificate
-app.delete("/certificates/:certificateId", async (req, res) => {
-  let conn;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      "DELETE FROM tbl_certificates WHERE certificate_id = ?",
-      [req.params.certificateId]
-    );
-
-    res.json({
-      message: "Certificate deleted successfully"
-    });
-
-  } catch (err) {
-    console.log("DELETE CERTIFICATE ERROR:", err);
-    res.status(500).json(err);
+    return res.status(500).send("<h1>Internal Server Error</h1>");
   } finally {
     if (conn) conn.release();
   }
