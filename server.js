@@ -412,6 +412,134 @@ app.delete("/awards/:awardId", async (req, res) => {
     if (conn) conn.release();
   }
 });
+// GET all certificates
+app.get("/certificates", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+
+    const rows = await conn.query(
+      "SELECT * FROM tbl_certificates"
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.log("GET CERTIFICATES ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// ADD certificate
+app.post("/certificates", async (req, res) => {
+  let conn;
+
+  const {
+    certificate_id,
+    student_id,
+    student_name,
+    list_type,
+    academic_year,
+    semester
+  } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `INSERT INTO tbl_certificates
+      (certificate_id, student_id, student_name, list_type, academic_year, semester)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        certificate_id,
+        student_id,
+        student_name,
+        list_type,
+        academic_year,
+        semester
+      ]
+    );
+
+    res.status(201).json({
+      message: "Certificate added successfully"
+    });
+
+  } catch (err) {
+    console.log("ADD CERTIFICATE ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// UPDATE certificate
+app.put("/certificates/:certificateId", async (req, res) => {
+  let conn;
+
+  const {
+    student_name,
+    list_type,
+    academic_year,
+    semester
+  } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `UPDATE tbl_certificates
+       SET
+         student_name = ?,
+         list_type = ?,
+         academic_year = ?,
+         semester = ?
+       WHERE certificate_id = ?`,
+      [
+        student_name,
+        list_type,
+        academic_year,
+        semester,
+        req.params.certificateId
+      ]
+    );
+
+    res.json({
+      message: "Certificate updated successfully"
+    });
+
+  } catch (err) {
+    console.log("UPDATE CERTIFICATE ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// DELETE certificate
+app.delete("/certificates/:certificateId", async (req, res) => {
+  let conn;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      "DELETE FROM tbl_certificates WHERE certificate_id = ?",
+      [req.params.certificateId]
+    );
+
+    res.json({
+      message: "Certificate deleted successfully"
+    });
+
+  } catch (err) {
+    console.log("DELETE CERTIFICATE ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
