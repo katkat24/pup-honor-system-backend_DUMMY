@@ -407,6 +407,19 @@ app.get("/verify/:id", async (req, res) => {
     if (conn) conn.release();
   }
 });
+app.get("/certificates", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_certificates");
+    res.json(rows);
+  } catch (err) {
+    console.log("GET CERTIFICATES ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
