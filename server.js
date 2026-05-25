@@ -420,25 +420,90 @@ app.get("/certificates", async (req, res) => {
     if (conn) conn.release();
   }
 });
+
+// ADD award
+app.post("/awards", async (req, res) => {
+  let conn;
+
+  const {
+    student_id,
+    award_type,
+    period_earned,
+    certificate_id,
+    date_generated
+  } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `INSERT INTO tbl_awards
+      (student_id, award_type, period_earned, certificate_id, date_generated)
+      VALUES (?, ?, ?, ?, ?)`,
+      [
+        student_id,
+        award_type,
+        period_earned,
+        certificate_id,
+        date_generated
+      ]
+    );
+
+    res.status(201).json({
+      message: "Award added successfully"
+    });
+
+  } catch (err) {
+    console.log("ADD AWARD ERROR:", err);
+    res.status(500).json(err);
+
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 // UPDATE award
 app.put("/awards/:awardId", async (req, res) => {
   let conn;
-  const { student_id, award_type, academic_year, semester } = req.body;
+
+  const {
+    student_id,
+    award_type,
+    period_earned,
+    certificate_id,
+    date_generated
+  } = req.body;
 
   try {
     conn = await pool.getConnection();
 
     await conn.query(
       `UPDATE tbl_awards
-       SET student_id = ?, award_type = ?, academic_year = ?, semester = ?
+       SET
+         student_id = ?,
+         award_type = ?,
+         period_earned = ?,
+         certificate_id = ?,
+         date_generated = ?
        WHERE award_id = ?`,
-      [student_id, award_type, academic_year, semester, req.params.awardId]
+      [
+        student_id,
+        award_type,
+        period_earned,
+        certificate_id,
+        date_generated,
+        req.params.awardId
+      ]
     );
 
-    res.json({ message: "Award updated successfully" });
+    res.json({
+      message: "Award updated successfully"
+    });
+
   } catch (err) {
     console.log("UPDATE AWARD ERROR:", err);
     res.status(500).json(err);
+
   } finally {
     if (conn) conn.release();
   }
