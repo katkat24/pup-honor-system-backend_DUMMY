@@ -14,10 +14,36 @@ const pool = mariadb.createPool({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   connectionLimit: 5,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
+
+async function updateRecord(conn, table, idColumn, idValue, body) {
+  const columns = await conn.query(`SHOW COLUMNS FROM \`${table}\``);
+  const validColumns = columns.map(col => col.Field).filter(col => col !== idColumn);
+
+  const keys = Object.keys(body).filter(key => validColumns.includes(key));
+
+  if (keys.length === 0) {
+    return { error: "No valid fields to update" };
+  }
+
+  const setClause = keys.map(key => `\`${key}\` = ?`).join(", ");
+  const values = keys.map(key => body[key]);
+
+  const result = await conn.query(
+    `UPDATE \`${table}\` SET ${setClause} WHERE \`${idColumn}\` = ?`,
+    [...values, idValue]
+  );
+
+  return { result, updatedFields: keys };
+}
+
+async function deleteRecord(conn, table, idColumn, idValue) {
+  return await conn.query(
+    `DELETE FROM \`${table}\` WHERE \`${idColumn}\` = ?`,
+    [idValue]
+  );
+}
 
 app.get("/", async (req, res) => {
   let conn;
@@ -32,16 +58,13 @@ app.get("/", async (req, res) => {
     if (conn) conn.release();
   }
 });
-/// STUDENTS
+
+// GET ROUTES
 app.get("/students", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-
-   const rows = await conn.query(`
-  	SELECT * FROM tbl_students
-    `);
-
+    const rows = await conn.query("SELECT * FROM tbl_students");
     res.json(rows);
   } catch (err) {
     console.log("STUDENTS ERROR:", err);
@@ -50,173 +73,156 @@ app.get("/students", async (req, res) => {
     if (conn) conn.release();
   }
 });
-// PROGRAMS
+
 app.get("/programs", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_programs");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// SUBJECTS
 app.get("/subjects", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_subjects");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// CURRICULUM
 app.get("/curriculum", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_curriculum");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// GRADES
 app.get("/grades", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_grades");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// HONOR CRITERIA
 app.get("/honor-criteria", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_honor_criteria");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// AWARDS
 app.get("/awards", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_awards");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// USERS
 app.get("/users", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_users");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// ADMINS
 app.get("/admins", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_admins");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
+
 app.get("/activity-log", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
     const rows = await conn.query("SELECT * FROM tbl_activity_log");
     res.json(rows);
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
-app.get("/password-reset-tokens", async (req, res) => {
-  let conn;
 
+app.get("/certificates", async (req, res) => {
+  let conn;
   try {
     conn = await pool.getConnection();
-
-    const rows = await conn.query(
-      "SELECT * FROM tbl_password_reset_token"
-    );
-
+    const rows = await conn.query("SELECT * FROM tbl_certificates");
     res.json(rows);
-
   } catch (err) {
-    console.log(err);
+    console.log("GET CERTIFICATES ERROR:", err);
     res.status(500).json(err);
-
   } finally {
     if (conn) conn.release();
   }
 });
-// GET password reset token
+
+// PASSWORD RESET TOKENS
+app.get("/password-reset-tokens", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query("SELECT * FROM tbl_password_reset_token");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 app.get("/password-reset-tokens/:token", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-
     const rows = await conn.query(
       "SELECT * FROM tbl_password_reset_token WHERE token = ?",
       [req.params.token]
@@ -228,21 +234,18 @@ app.get("/password-reset-tokens/:token", async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    console.log("TOKEN GET ERROR:", err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// CREATE password reset token
 app.post("/password-reset-tokens", async (req, res) => {
   let conn;
   const { user_id, token, expiry } = req.body;
 
   try {
     conn = await pool.getConnection();
-
     await conn.query(
       "INSERT INTO tbl_password_reset_token (user_id, token, expiry) VALUES (?, ?, ?)",
       [user_id, token, expiry]
@@ -250,20 +253,16 @@ app.post("/password-reset-tokens", async (req, res) => {
 
     res.status(201).json({ message: "Token created" });
   } catch (err) {
-    console.log("TOKEN POST ERROR:", err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// DELETE password reset token
 app.delete("/password-reset-tokens/:token", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
-
     await conn.query(
       "DELETE FROM tbl_password_reset_token WHERE token = ?",
       [req.params.token]
@@ -271,45 +270,16 @@ app.delete("/password-reset-tokens/:token", async (req, res) => {
 
     res.json({ message: "Token deleted" });
   } catch (err) {
-    console.log("TOKEN DELETE ERROR:", err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// UPDATE user password
-app.put("/users/:userId", async (req, res) => {
-  let conn;
-  const { password } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      "UPDATE tbl_users SET password = ? WHERE user_id = ?",
-      [password, req.params.userId]
-    );
-
-    res.json({ message: "Password updated" });
-  } catch (err) {
-    console.log("PASSWORD UPDATE ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
-// Endpoint for QR Verification: /verify/CERT-12345
+// QR VERIFY HTML
 app.get("/verify/:id", async (req, res) => {
   let conn;
   const certificateId = req.params.id;
-
-  if (!certificateId) {
-    return res.status(400).send(`
-      <h1>Missing Certificate ID</h1>
-      <p>Please provide a certificate ID.</p>
-    `);
-  }
 
   try {
     conn = await pool.getConnection();
@@ -322,7 +292,7 @@ app.get("/verify/:id", async (req, res) => {
     if (rows.length > 0) {
       const cert = rows[0];
 
-      return res.status(200).send(`
+      return res.send(`
         <!DOCTYPE html>
         <html>
         <head>
@@ -400,31 +370,17 @@ app.get("/verify/:id", async (req, res) => {
       </body>
       </html>
     `);
-  } catch (error) {
-    console.log("VERIFY ERROR:", error);
-    return res.status(500).send("<h1>Internal Server Error</h1>");
-  } finally {
-    if (conn) conn.release();
-  }
-});
-app.get("/certificates", async (req, res) => {
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const rows = await conn.query("SELECT * FROM tbl_certificates");
-    res.json(rows);
   } catch (err) {
-    console.log("GET CERTIFICATES ERROR:", err);
-    res.status(500).json(err);
+    console.log("VERIFY ERROR:", err);
+    res.status(500).send("<h1>Internal Server Error</h1>");
   } finally {
     if (conn) conn.release();
   }
 });
 
-// ADD award
+// AWARDS CRUD
 app.post("/awards", async (req, res) => {
   let conn;
-
   const {
     student_id,
     award_type,
@@ -440,32 +396,20 @@ app.post("/awards", async (req, res) => {
       `INSERT INTO tbl_awards
       (student_id, award_type, period_earned, certificate_id, date_generated)
       VALUES (?, ?, ?, ?, ?)`,
-      [
-        student_id,
-        award_type,
-        period_earned,
-        certificate_id,
-        date_generated
-      ]
+      [student_id, award_type, period_earned, certificate_id, date_generated]
     );
 
-    res.status(201).json({
-      message: "Award added successfully"
-    });
-
+    res.status(201).json({ message: "Award added successfully" });
   } catch (err) {
     console.log("ADD AWARD ERROR:", err);
     res.status(500).json(err);
-
   } finally {
     if (conn) conn.release();
   }
 });
 
-// UPDATE award
 app.put("/awards/:awardId", async (req, res) => {
   let conn;
-
   const {
     student_id,
     award_type,
@@ -479,12 +423,7 @@ app.put("/awards/:awardId", async (req, res) => {
 
     await conn.query(
       `UPDATE tbl_awards
-       SET
-         student_id = ?,
-         award_type = ?,
-         period_earned = ?,
-         certificate_id = ?,
-         date_generated = ?
+       SET student_id = ?, award_type = ?, period_earned = ?, certificate_id = ?, date_generated = ?
        WHERE award_id = ?`,
       [
         student_id,
@@ -496,26 +435,19 @@ app.put("/awards/:awardId", async (req, res) => {
       ]
     );
 
-    res.json({
-      message: "Award updated successfully"
-    });
-
+    res.json({ message: "Award updated successfully" });
   } catch (err) {
     console.log("UPDATE AWARD ERROR:", err);
     res.status(500).json(err);
-
   } finally {
     if (conn) conn.release();
   }
 });
 
-// DELETE award
 app.delete("/awards/:awardId", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
-
     await conn.query(
       "DELETE FROM tbl_awards WHERE award_id = ?",
       [req.params.awardId]
@@ -523,26 +455,112 @@ app.delete("/awards/:awardId", async (req, res) => {
 
     res.json({ message: "Award deleted successfully" });
   } catch (err) {
-    console.log("DELETE AWARD ERROR:", err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
-// UPDATE student
-app.put("/students/:studentId", async (req, res) => {
+
+// CERTIFICATES CRUD
+app.post("/certificates", async (req, res) => {
   let conn;
-  const data = req.body;
+  const {
+    certificate_id,
+    student_id,
+    student_name,
+    list_type,
+    academic_year,
+    semester
+  } = req.body;
 
   try {
     conn = await pool.getConnection();
 
     await conn.query(
-      "UPDATE tbl_students SET ? WHERE student_id = ?",
-      [data, req.params.studentId]
+      `INSERT INTO tbl_certificates
+      (certificate_id, student_id, student_name, list_type, academic_year, semester)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        certificate_id,
+        student_id,
+        student_name,
+        list_type,
+        academic_year,
+        semester
+      ]
     );
 
-    res.json({ message: "Student updated successfully" });
+    res.status(201).json({ message: "Certificate added successfully" });
+  } catch (err) {
+    console.log("ADD CERTIFICATE ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.put("/certificates/:certificateId", async (req, res) => {
+  let conn;
+  const {
+    student_name,
+    list_type,
+    academic_year,
+    semester
+  } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `UPDATE tbl_certificates
+       SET student_name = ?, list_type = ?, academic_year = ?, semester = ?
+       WHERE certificate_id = ?`,
+      [
+        student_name,
+        list_type,
+        academic_year,
+        semester,
+        req.params.certificateId
+      ]
+    );
+
+    res.json({ message: "Certificate updated successfully" });
+  } catch (err) {
+    console.log("UPDATE CERTIFICATE ERROR:", err);
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete("/certificates/:certificateId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      "DELETE FROM tbl_certificates WHERE certificate_id = ?",
+      [req.params.certificateId]
+    );
+
+    res.json({ message: "Certificate deleted successfully" });
+  } catch (err) {
+    res.status(500).json(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// GENERIC UPDATE + DELETE ROUTES
+app.put("/students/:studentId", async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const result = await updateRecord(conn, "tbl_students", "student_id", req.params.studentId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Student updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     console.log("UPDATE STUDENT ERROR:", err);
     res.status(500).json(err);
@@ -551,34 +569,28 @@ app.put("/students/:studentId", async (req, res) => {
   }
 });
 
-// DELETE student
 app.delete("/students/:studentId", async (req, res) => {
   let conn;
-
   try {
     conn = await pool.getConnection();
-
-    await conn.query(
-      "DELETE FROM tbl_students WHERE student_id = ?",
-      [req.params.studentId]
-    );
-
+    await deleteRecord(conn, "tbl_students", "student_id", req.params.studentId);
     res.json({ message: "Student deleted successfully" });
   } catch (err) {
-    console.log("DELETE STUDENT ERROR:", err);
     res.status(500).json(err);
   } finally {
     if (conn) conn.release();
   }
 });
 
-// GRADES
 app.put("/grades/:gradeId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_grades SET ? WHERE grade_id = ?", [req.body, req.params.gradeId]);
-    res.json({ message: "Grade updated successfully" });
+    const result = await updateRecord(conn, "tbl_grades", "grade_id", req.params.gradeId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Grade updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -590,7 +602,7 @@ app.delete("/grades/:gradeId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_grades WHERE grade_id = ?", [req.params.gradeId]);
+    await deleteRecord(conn, "tbl_grades", "grade_id", req.params.gradeId);
     res.json({ message: "Grade deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
@@ -599,13 +611,15 @@ app.delete("/grades/:gradeId", async (req, res) => {
   }
 });
 
-// ADMINS
 app.put("/admins/:employeeId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_admins SET ? WHERE employee_id = ?", [req.body, req.params.employeeId]);
-    res.json({ message: "Admin updated successfully" });
+    const result = await updateRecord(conn, "tbl_admins", "employee_id", req.params.employeeId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Admin updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -617,7 +631,7 @@ app.delete("/admins/:employeeId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_admins WHERE employee_id = ?", [req.params.employeeId]);
+    await deleteRecord(conn, "tbl_admins", "employee_id", req.params.employeeId);
     res.json({ message: "Admin deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
@@ -626,13 +640,15 @@ app.delete("/admins/:employeeId", async (req, res) => {
   }
 });
 
-// USERS
 app.put("/users/:userId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_users SET ? WHERE user_id = ?", [req.body, req.params.userId]);
-    res.json({ message: "User updated successfully" });
+    const result = await updateRecord(conn, "tbl_users", "user_id", req.params.userId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "User updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -644,7 +660,7 @@ app.delete("/users/:userId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_users WHERE user_id = ?", [req.params.userId]);
+    await deleteRecord(conn, "tbl_users", "user_id", req.params.userId);
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
@@ -653,13 +669,15 @@ app.delete("/users/:userId", async (req, res) => {
   }
 });
 
-// CURRICULUM
 app.put("/curriculum/:curriculumId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_curriculum SET ? WHERE curriculum_id = ?", [req.body, req.params.curriculumId]);
-    res.json({ message: "Curriculum updated successfully" });
+    const result = await updateRecord(conn, "tbl_curriculum", "curriculum_id", req.params.curriculumId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Curriculum updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -671,7 +689,7 @@ app.delete("/curriculum/:curriculumId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_curriculum WHERE curriculum_id = ?", [req.params.curriculumId]);
+    await deleteRecord(conn, "tbl_curriculum", "curriculum_id", req.params.curriculumId);
     res.json({ message: "Curriculum deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
@@ -680,13 +698,15 @@ app.delete("/curriculum/:curriculumId", async (req, res) => {
   }
 });
 
-// SUBJECTS
 app.put("/subjects/:subjectId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_subjects SET ? WHERE subject_id = ?", [req.body, req.params.subjectId]);
-    res.json({ message: "Subject updated successfully" });
+    const result = await updateRecord(conn, "tbl_subjects", "subject_id", req.params.subjectId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Subject updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -698,7 +718,7 @@ app.delete("/subjects/:subjectId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_subjects WHERE subject_id = ?", [req.params.subjectId]);
+    await deleteRecord(conn, "tbl_subjects", "subject_id", req.params.subjectId);
     res.json({ message: "Subject deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
@@ -707,13 +727,15 @@ app.delete("/subjects/:subjectId", async (req, res) => {
   }
 });
 
-// PROGRAMS
 app.put("/programs/:programId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("UPDATE tbl_programs SET ? WHERE program_id = ?", [req.body, req.params.programId]);
-    res.json({ message: "Program updated successfully" });
+    const result = await updateRecord(conn, "tbl_programs", "program_id", req.params.programId, req.body);
+
+    if (result.error) return res.status(400).json(result);
+
+    res.json({ message: "Program updated successfully", updatedFields: result.updatedFields });
   } catch (err) {
     res.status(500).json(err);
   } finally {
@@ -725,7 +747,7 @@ app.delete("/programs/:programId", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query("DELETE FROM tbl_programs WHERE program_id = ?", [req.params.programId]);
+    await deleteRecord(conn, "tbl_programs", "program_id", req.params.programId);
     res.json({ message: "Program deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
