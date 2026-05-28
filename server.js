@@ -3,6 +3,9 @@ const mariadb = require("mariadb");
 const cors = require("cors");
 require("dotenv").config();
 
+const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -16,6 +19,7 @@ const pool = mariadb.createPool({
   connectionLimit: 5,
   ssl: { rejectUnauthorized: false }
 });
+
 
 async function updateRecord(conn, table, idColumn, idValue, body) {
   const columns = await conn.query(`SHOW COLUMNS FROM \`${table}\``);
@@ -240,25 +244,57 @@ app.get("/password-reset-tokens/:token", async (req, res) => {
   }
 });
 
+// REQUEST PASSWORD RESET
 app.post("/password-reset-tokens", async (req, res) => {
   let conn;
-  const { user_id, token, expiry } = req.body;
+
+  const { email } = req.body;
 
   try {
     conn = await pool.getConnection();
-    await conn.query(
-      "INSERT INTO tbl_password_reset_token (user_id, token, expiry) VALUES (?, ?, ?)",
-      [user_id, token, expiry]
+
+    // find user by email
+    const users = await conn.query(
+      "SELECT * FROM tbl_users WHERE email = ?",
+      [email]
     );
 
-    res.status(201).json({ message: "Token created" });
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    const user = users[0];
+
+    // generate token
+    const token = uuidv4();
+
+    // token expiry (1 hour)
+    const expiry = new Date(Date.now() + 60 * 60 * 1000);
+
+    // save token
+    await conn.query(
+      `INSERT INTO tbl_password_reset_token
+      (user_id, token, expiry)
+      VALUES (?, ?, ?)`,
+      [user.user_id, token, expiry]
+    );
+
+    // temporary demo response
+    res.json({
+      message: "Reset email sent",
+      resetToken: token
+    });
+
   } catch (err) {
+    console.log("PASSWORD RESET TOKEN ERROR:", err);
     res.status(500).json(err);
+
   } finally {
     if (conn) conn.release();
   }
 });
-
 app.delete("/password-reset-tokens/:token", async (req, res) => {
   let conn;
   try {
@@ -275,6 +311,70 @@ app.delete("/password-reset-tokens/:token", async (req, res) => {
     if (conn) conn.release();
   }
 });
+
+// RESET PASSWORD
+app.post("/reset-password", async (req, res) => {
+  let conn;
+
+  const { token, newPassword } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    // find token
+    const rows = await conn.query(
+      `SELECT *
+       FROM tbl_password_reset_token
+       WHERE token = ?`,
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "Invalid token"
+      });
+    }
+
+    const resetRecord = rows[0];
+
+    // check if token expired
+    if (new Date(resetRecord.expiry) < new Date()) {
+      return res.status(400).json({
+        message: "Token expired"
+      });
+    }
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // update password
+    await conn.query(
+      `UPDATE tbl_users
+       SET password = ?
+       WHERE user_id = ?`,
+      [hashedPassword, resetRecord.user_id]
+    );
+
+    // remove token after use
+    await conn.query(
+      `DELETE FROM tbl_password_reset_token
+       WHERE token = ?`,
+      [token]
+    );
+
+    res.json({
+      message: "Password updated successfully"
+    });
+
+  } catch (err) {
+    console.log("RESET PASSWORD ERROR:", err);
+    res.status(500).json(err);
+
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 
 // QR VERIFY HTML
 app.get("/verify/:id", async (req, res) => {
