@@ -482,31 +482,27 @@ app.get("/verify/:id", async (req, res) => {
 app.post("/awards", async (req, res) => {
   let conn;
   const {
+  student_id,
+  award_type,
+  period_earned,
+  gwa_computed,
+  certificate_id,
+  date_generated
+} = req.body;
+
+await conn.query(
+  `INSERT INTO tbl_awards
+  (student_id, award_type, period_earned, gwa_computed, certificate_id, date_generated)
+  VALUES (?, ?, ?, ?, ?, ?)`,
+  [
     student_id,
     award_type,
     period_earned,
+    gwa_computed,
     certificate_id,
     date_generated
-  } = req.body;
-
-  try {
-    conn = await pool.getConnection();
-
-    await conn.query(
-      `INSERT INTO tbl_awards
-      (student_id, award_type, period_earned, certificate_id, date_generated)
-      VALUES (?, ?, ?, ?, ?)`,
-      [student_id, award_type, period_earned, certificate_id, date_generated]
-    );
-
-    res.status(201).json({ message: "Award added successfully" });
-  } catch (err) {
-    console.log("ADD AWARD ERROR:", err);
-    res.status(500).json(err);
-  } finally {
-    if (conn) conn.release();
-  }
-});
+  ]
+);
 
 app.put("/awards/:awardId", async (req, res) => {
   let conn;
@@ -856,44 +852,6 @@ app.delete("/programs/:programId", async (req, res) => {
   }
 });
 
-// PATCH USER PASSWORD
-app.patch("/users/:id/password", async (req, res) => {
-  let conn;
-
-  const { newPassword } = req.body;
-
-  if (!newPassword) {
-    return res.status(400).json({
-      message: "newPassword is required"
-    });
-  }
-
-  try {
-    conn = await pool.getConnection();
-
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    const result = await conn.query(
-      `UPDATE tbl_users
-       SET password = ?
-       WHERE user_id = ?`,
-      [hashedPassword, req.params.id]
-    );
-
-    res.json({
-      message: "Password updated successfully"
-    });
-
-  } catch (err) {
-    console.log("PATCH PASSWORD ERROR:", err);
-    res.status(500).json(err);
-
-  } finally {
-    if (conn) conn.release();
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 
