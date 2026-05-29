@@ -482,27 +482,23 @@ app.get("/verify/:id", async (req, res) => {
 app.post("/awards", async (req, res) => {
   let conn;
   const {
- 	 student_id,
-  	award_type,
- 	 period_earned,
-  	gwa_computed,
-  	certificate_id,
-  	date_generated
-	} = req.body;
-
-await conn.query(
-  `INSERT INTO tbl_awards
-  (student_id, award_type, period_earned, gwa_computed, certificate_id, date_generated)
-  VALUES (?, ?, ?, ?, ?, ?)`,
-  [
     student_id,
     award_type,
     period_earned,
-    gwa_computed,
     certificate_id,
     date_generated
-  ]
-);
+  } = req.body;
+
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(
+      `INSERT INTO tbl_awards
+      (student_id, award_type, period_earned, certificate_id, date_generated)
+      VALUES (?, ?, ?, ?, ?)`,
+      [student_id, award_type, period_earned, certificate_id, date_generated]
+    );
+
     res.status(201).json({ message: "Award added successfully" });
   } catch (err) {
     console.log("ADD AWARD ERROR:", err);
