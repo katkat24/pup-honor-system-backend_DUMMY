@@ -856,6 +856,45 @@ app.delete("/programs/:programId", async (req, res) => {
   }
 });
 
+// PATCH USER PASSWORD
+app.patch("/users/:id/password", async (req, res) => {
+  let conn;
+
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    return res.status(400).json({
+      message: "newPassword is required"
+    });
+  }
+
+  try {
+    conn = await pool.getConnection();
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    const result = await conn.query(
+      `UPDATE tbl_users
+       SET password = ?
+       WHERE user_id = ?`,
+      [hashedPassword, req.params.id]
+    );
+
+    res.json({
+      message: "Password updated successfully"
+    });
+
+  } catch (err) {
+    console.log("PATCH PASSWORD ERROR:", err);
+    res.status(500).json(err);
+
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
